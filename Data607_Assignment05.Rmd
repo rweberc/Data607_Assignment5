@@ -1,0 +1,110 @@
+---
+title: "Data607_Assignment05"
+author: "Ryan Weber"
+date: "March 4, 2018"
+output: 
+  html_document:
+    theme: lumen
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+Github for homework: https://github.com/rweberc/Data607_Assignment5
+
+  
+### Read in data  
+```{r}
+schedDf <- read.csv("/Users/ryanweber/Desktop/CUNY/Data 607 Db/Assignments/Week 5/PlaneTimes.csv",
+                    stringsAsFactors = FALSE)
+schedDf
+```  
+  
+### Update column names
+```{r}
+colnames(schedDf)[1:2] <- c("company", "timeType")
+schedDf
+```
+
+### Remove blank rows
+```{r}
+schedDf <- schedDf %>% filter(timeType != "")
+schedDf
+```
+
+### Cascade company names
+```{r}
+schedDf$company[schedDf$company == ""] <- NA
+schedDf <- schedDf %>% fill(company)
+schedDf
+```
+
+### Convert to long format
+```{r}
+schedDf <- gather(schedDf, "destination", "occurrences", 3:length(schedDf))
+```
+
+### Clean columns
+```{r}
+schedDf$occurrences <- as.numeric(schedDf$occurrences)
+
+schedDf$timeType[schedDf$timeType == "on time"] <- "on.time"
+
+schedDf$destination <- str_replace(schedDf$destination, "\\.", " ")
+
+```
+
+### Return to wide format with ontime/delayed as columns
+Create two dataframes: one with overall values (compDf), another that preserves the destination information (compDestDf)
+```{r}
+compDf <- schedDf %>% 
+  group_by(company, timeType) %>% 
+  summarize(occurrences = sum(occurrences))
+
+compDestDf <- schedDf %>% spread(timeType, occurrences)
+compDf <- compDf %>% spread(timeType, occurrences)
+
+compDestDf
+compDf
+```
+
+### Derive percent delayed, percent on time columns
+```{r}
+compDf$percentDelayed <- round(compDf$delayed/(compDf$delayed + compDf$on.time), 2) 
+compDestDf$percentDelayed <- round(compDestDf$delayed/(compDestDf$delayed + compDestDf$on.time), 2) 
+
+compDestDf
+compDf
+```
+
+### Visualize
+```{r}
+ggplot(compDf, aes(x=company, y=percentDelayed)) + 
+  geom_bar(stat = "identity")  +
+  labs(title = "Overall Percent of Delayed Flights", x = "Company", y = "Percent Delayed Flights") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+From the above, we can see that even though AM WEST has a slightly lower percentage of delayed flights than ALASKA; however...
+
+```{r}
+ggplot(compDestDf, aes(x=company, y=percentDelayed)) + 
+  geom_bar(aes(fill = destination), position = "dodge", stat = "identity") +
+  labs(title = "Delayed Flights By Destination", x = "Company", y = "Percent Delayed Flights") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+Looking at individual destinations, we can see that trips to Phoenix have the smallest percentage of delayed flights for both companies, and AM WEST happens to have the majority of their arrivals to this location. AM WEST actually has a much greater percentage of delayed flights to all locations.
+
