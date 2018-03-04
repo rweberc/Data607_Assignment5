@@ -25,7 +25,7 @@ Github for homework: https://github.com/rweberc/Data607_Assignment5
   
 ### Read in data  
 ```{r}
-schedDf <- read.csv("/Users/ryanweber/Desktop/CUNY/Data 607 Db/Assignments/Week 5/PlaneTimes.csv",
+schedDf <- read.csv("https://raw.githubusercontent.com/rweberc/Data607_Assignment5/master/PlaneTimes.csv",
                     stringsAsFactors = FALSE)
 schedDf
 ```  
